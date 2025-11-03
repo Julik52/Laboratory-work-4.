@@ -1,5 +1,5 @@
 -- Table: User
-CREATE TABLE "user" (
+CREATE TABLE app_user (
     user_id INTEGER PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
@@ -11,20 +11,20 @@ CREATE TABLE "user" (
         CHECK (last_login <= CURRENT_TIMESTAMP)
 );
 
--- Table: Locations
-CREATE TABLE "locations" (
+-- Table: Location
+CREATE TABLE locations (
     location_id INTEGER PRIMARY KEY,
     location_name VARCHAR(50) NOT NULL,
     location_type VARCHAR(30)
         CHECK (location_type IN ('Житлова', 'Офіс', 'Склад')),
     building VARCHAR(50),
-    floor INTEGER,
+    floor_level INTEGER, -- Renamed from 'floor' (RF04)
     user_id INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES app_user(user_id) ON DELETE CASCADE
 );
 
--- Table: Monitorings 
-CREATE TABLE "monitorings" (
+-- Table: Monitoring (base)
+CREATE TABLE monitorings (
     monitoring_id INTEGER PRIMARY KEY,
     monitoring_name VARCHAR(100) NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'Неактивний'
@@ -34,33 +34,35 @@ CREATE TABLE "monitorings" (
     data_collection_frequency INTERVAL NOT NULL
         CHECK (data_collection_frequency > INTERVAL '0 second'),
     user_id INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES app_user(user_id) ON DELETE CASCADE
 );
 
 -- Table: TemperatureMonitoring
-CREATE TABLE "temperature_monitoring" (
+CREATE TABLE temperature_monitoring (
     temp_monitoring_id INTEGER PRIMARY KEY,
-    lower_limit NUMERIC(5,2) NOT NULL
+    lower_limit NUMERIC(5, 2) NOT NULL
         CHECK (lower_limit > -100),
-    upper_limit NUMERIC(5,2) NOT NULL
+    upper_limit NUMERIC(5, 2) NOT NULL
         CHECK (upper_limit < 200),
     monitoring_id INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY (monitoring_id) REFERENCES "monitorings"(monitoring_id) ON DELETE CASCADE -- Updated reference
+    FOREIGN KEY (monitoring_id) REFERENCES monitorings(monitoring_id)
+        ON DELETE CASCADE
 );
 
 -- Table: SecurityMonitoring
-CREATE TABLE "security_monitoring" (
+CREATE TABLE security_monitoring (
     security_monitoring_id INTEGER PRIMARY KEY,
     risk_priority VARCHAR(30) NOT NULL
         CHECK (risk_priority IN ('Низький', 'Середній', 'Високий')),
     risk_types VARCHAR(50) NOT NULL
         CHECK (risk_types IN ('Якість повітря', 'Задимлення', 'Рух')),
     monitoring_id INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY (monitoring_id) REFERENCES "monitorings"(monitoring_id) ON DELETE CASCADE -- Updated reference
+    FOREIGN KEY (monitoring_id) REFERENCES monitorings(monitoring_id)
+        ON DELETE CASCADE
 );
 
 -- Table: Sensor
-CREATE TABLE "sensor" (
+CREATE TABLE sensor (
     sensor_id INTEGER PRIMARY KEY,
     sensor_name VARCHAR(50) NOT NULL UNIQUE,
     sensor_type VARCHAR(30) NOT NULL
@@ -69,33 +71,36 @@ CREATE TABLE "sensor" (
     model VARCHAR(50),
     location_id INTEGER NOT NULL,
     monitoring_id INTEGER,
-    FOREIGN KEY (location_id) REFERENCES "locations"(location_id) ON DELETE CASCADE, -- Updated reference
-    FOREIGN KEY (monitoring_id) REFERENCES "monitorings"(monitoring_id) ON DELETE SET NULL -- Updated reference
+    FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE CASCADE,
+    FOREIGN KEY (monitoring_id) REFERENCES monitorings(monitoring_id)
+        ON DELETE SET NULL
 );
 
 -- Table: CurrentTemperature
-CREATE TABLE "current_temperature" (
+CREATE TABLE current_temperature (
     curr_temp_id INTEGER PRIMARY KEY,
-    value NUMERIC(5,2) NOT NULL,
+    current_value NUMERIC(5, 2) NOT NULL, -- Renamed from 'value' (RF04)
     last_update TIMESTAMP NOT NULL
         CHECK (last_update <= CURRENT_TIMESTAMP),
     temp_monitoring_id INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY (temp_monitoring_id) REFERENCES "temperature_monitoring"(temp_monitoring_id) ON DELETE CASCADE
+    FOREIGN KEY (temp_monitoring_id)
+        REFERENCES temperature_monitoring(temp_monitoring_id) ON DELETE CASCADE
 );
 
 -- Table: CurrentSecurityStatus
-CREATE TABLE "current_security_status" (
+CREATE TABLE current_security_status (
     curr_sec_id INTEGER PRIMARY KEY,
     overall_status VARCHAR(30) NOT NULL
         CHECK (overall_status IN ('Безпечно', 'Загроза')),
     last_update TIMESTAMP NOT NULL
         CHECK (last_update <= CURRENT_TIMESTAMP),
     security_monitoring_id INTEGER NOT NULL UNIQUE,
-    FOREIGN KEY (security_monitoring_id) REFERENCES "security_monitoring"(security_monitoring_id) ON DELETE CASCADE
+    FOREIGN KEY (security_monitoring_id)
+        REFERENCES security_monitoring(security_monitoring_id) ON DELETE CASCADE
 );
 
 -- Table: Notification
-CREATE TABLE "notification" (
+CREATE TABLE notification (
     notification_id INTEGER PRIMARY KEY,
     message VARCHAR(255) NOT NULL,
     date_time TIMESTAMP NOT NULL
@@ -104,18 +109,19 @@ CREATE TABLE "notification" (
         CHECK (event_category IN ('Температура', 'Безпека')),
     monitoring_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    FOREIGN KEY (monitoring_id) REFERENCES "monitorings"(monitoring_id) ON DELETE CASCADE, -- Updated reference
-    FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+    FOREIGN KEY (monitoring_id) REFERENCES monitorings(monitoring_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES app_user(user_id) ON DELETE CASCADE
 );
 
 -- Indexes
-CREATE INDEX idx_monitoring_user ON "monitorings"(user_id);
-CREATE INDEX idx_tempmon_monitoring ON "temperature_monitoring"(monitoring_id);
-CREATE INDEX idx_secmon_monitoring ON "security_monitoring"(monitoring_id);
-CREATE INDEX idx_currtemp_monitoring ON "current_temperature"(temp_monitoring_id);
-CREATE INDEX idx_currsec_monitoring ON "current_security_status"(security_monitoring_id);
-CREATE INDEX idx_notif_monitoring ON "notification"(monitoring_id);
-CREATE INDEX idx_notif_user ON "notification"(user_id);
-CREATE INDEX idx_sensor_location ON "sensor"(location_id);
-CREATE INDEX idx_sensor_monitoring ON "sensor"(monitoring_id);
-CREATE INDEX idx_location_user ON "locations"(user_id);
+CREATE INDEX idx_monitoring_user ON monitorings(user_id);
+CREATE INDEX idx_tempmon_monitoring ON temperature_monitoring(monitoring_id);
+CREATE INDEX idx_secmon_monitoring ON security_monitoring(monitoring_id);
+CREATE INDEX idx_currtemp_monitoring ON current_temperature(temp_monitoring_id);
+CREATE INDEX idx_currsec_monitoring ON current_security_status(security_monitoring_id);
+CREATE INDEX idx_notif_monitoring ON notification(monitoring_id);
+CREATE INDEX idx_notif_user ON notification(user_id);
+CREATE INDEX idx_sensor_location ON sensor(location_id);
+CREATE INDEX idx_sensor_monitoring ON sensor(monitoring_id);
+CREATE INDEX idx_location_user ON locations(user_id);
