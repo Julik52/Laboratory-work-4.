@@ -80,7 +80,7 @@ CREATE TABLE sensor (
 -- Table: CurrentTemperature
 CREATE TABLE current_temperature (
     curr_temp_id INTEGER PRIMARY KEY,
-    value NUMERIC(5, 2) NOT NULL,
+    curr_value NUMERIC(5, 2) NOT NULL,
     last_update TIMESTAMP NOT NULL
     CHECK (last_update <= CURRENT_TIMESTAMP),
     temp_monitoring_id INTEGER NOT NULL UNIQUE,
