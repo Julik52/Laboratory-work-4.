@@ -11,7 +11,7 @@ CREATE TABLE "user" (
         CHECK (last_login <= CURRENT_TIMESTAMP)
 );
 
--- Table: Locations (Renamed from location)
+-- Table: Locations
 CREATE TABLE "locations" (
     location_id INTEGER PRIMARY KEY,
     location_name VARCHAR(50) NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE "locations" (
     FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
 );
 
--- Table: Monitorings (Renamed from monitoring)
+-- Table: Monitorings 
 CREATE TABLE "monitorings" (
     monitoring_id INTEGER PRIMARY KEY,
     monitoring_name VARCHAR(100) NOT NULL,
