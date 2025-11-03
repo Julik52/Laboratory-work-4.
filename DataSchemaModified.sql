@@ -70,7 +70,7 @@ CREATE TABLE sensor (
     sensor_type VARCHAR(30) NOT NULL
     CHECK (sensor_type IN ('Температура', 'CO2', 'Дим', 'Рух')),
     manufacturer VARCHAR(50),
-    model VARCHAR(50),
+    model_ver VARCHAR(50),
     location_id INTEGER NOT NULL,
     monitoring_id INTEGER,
     FOREIGN KEY (location_id) REFERENCES locations (location_id),
