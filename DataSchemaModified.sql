@@ -18,7 +18,7 @@ CREATE TABLE locations (
     location_type VARCHAR(30)
         CHECK (location_type IN ('Житлова', 'Офіс', 'Склад')),
     building VARCHAR(50),
-    floor_level INTEGER, -- Renamed from 'floor' (RF04)
+    floor_level INTEGER, -- Renamed from 'floor'
     user_id INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES app_user(user_id) ON DELETE CASCADE
 );
@@ -79,7 +79,7 @@ CREATE TABLE sensor (
 -- Table: CurrentTemperature
 CREATE TABLE current_temperature (
     curr_temp_id INTEGER PRIMARY KEY,
-    current_value NUMERIC(5, 2) NOT NULL, -- Renamed from 'value' (RF04)
+    current_value NUMERIC(5, 2) NOT NULL, -- Renamed from 'value'
     last_update TIMESTAMP NOT NULL
         CHECK (last_update <= CURRENT_TIMESTAMP),
     temp_monitoring_id INTEGER NOT NULL UNIQUE,
